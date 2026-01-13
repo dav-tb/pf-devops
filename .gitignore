@@ -1,0 +1,3 @@
+# .NET build outputs
+src/**/bin/
+src/**/obj/
