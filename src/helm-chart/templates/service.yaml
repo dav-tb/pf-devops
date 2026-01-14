@@ -3,13 +3,13 @@ kind: Service
 metadata:
   name: {{ include "daywriter.fullname" . }}
   labels:
-    {{- include "daywriter.labels" . | nindent 2 }}
+    {{- include "daywriter.labels" . | nindent 4 }}
 spec:
-  type: {{ .Values.service.type }}
-  ports:
-    - port: {{ .Values.service.port }}
-      targetPort: https
-      protocol: TCP
-      name: http
   selector:
     {{- include "daywriter.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      protocol: TCP
+      targetPort: http
+  type: {{ .Values.service.type }}

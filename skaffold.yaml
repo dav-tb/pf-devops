@@ -1,17 +1,74 @@
 apiVersion: skaffold/v3
 kind: Config
 metadata:
-  name: postgres
-deploy:
+  name: daywriter-app
+build:
+  artifacts:
+    - image: daywriter
+      context: .
+      docker:
+        dockerfile: ./src/DayWriter/Dockerfile
+        buildArgs:
+          SOURCE_DIR: "dist"
+      hooks:
+        before:
+          - command: ["dotnet", "publish", "-c", "Release", "-o", "../../dist"]
+            dir: ./src/DayWriter
+manifests:
   helm:
-    flags:
-      install:
-        - --create-namespace
     releases:
-      - name: postgresql
-        repo: https://charts.bitnami.com/bitnami
-        remoteChart: postgresql
-        version: 15.5.38
-        namespace: daywriter
-        setValues:
-          global.postgresql.auth.database: datesaver
+      - name: daywriter
+        chartPath: ./src/helm-chart
+        setValueTemplates:
+          image.repository: "{{.IMAGE_REPO}}"
+          image.tag: "{{.IMAGE_TAG}}"
+deploy:
+  helm: {}
+
+profiles:
+
+  - name: development
+    manifests:
+      helm:
+        releases:
+          - name: daywriter
+            chartPath: ./src/helm-chart
+            namespace: development
+            setValueTemplates:
+              image.repository: "{{.IMAGE_REPO}}"
+              image.tag: "{{.IMAGE_TAG}}"
+            setValues:
+              env: "development"
+              replicaCount: 1
+              postgresql.database: "dw_dev"
+              postgresql.username: "daywriter_dev"
+              postgresql.passwordSecretKeyRefName: "dev-db-password"
+              postgresql.passwordSecretKeyRefKey: "password"
+              postgresql.replPasswordSecretKeyRefName: "dev-db-password"
+              postgresql.replPasswordSecretKeyRefKey: "replication-password"
+              postgresql.volumeMountPath: "/bitnami/postgresql"
+              postgresql.volumeClaimStorageResourceRequest: "1Gi"
+              podDisruptionBudget.minAvailable: 1
+
+  - name: production
+    manifests:
+      helm:
+        releases:
+          - name: daywriter
+            chartPath: ./src/helm-chart
+            namespace: production
+            setValueTemplates:
+              image.repository: "{{.IMAGE_REPO}}"
+              image.tag: "{{.IMAGE_TAG}}"
+            setValues:
+              env: "production"
+              replicaCount: 3
+              postgresql.database: "dw_prod"
+              postgresql.username: "daywriter_prod"
+              postgresql.passwordSecretKeyRefName: "prod-db-password"
+              postgresql.passwordSecretKeyRefKey: "password"
+              postgresql.replPasswordSecretKeyRefName: "prod-db-password"
+              postgresql.replPasswordSecretKeyRefKey: "replication-password"
+              postgresql.volumeMountPath: "/bitnami/postgresql"
+              postgresql.volumeClaimStorageResourceRequest: "10Gi"
+              podDisruptionBudget.minAvailable: 2

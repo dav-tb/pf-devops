@@ -1,0 +1,12 @@
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "daywriter.fullname" . }}
+  labels:
+    {{- include "daywriter.labels" . | nindent 4 }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "daywriter.selectorLabels" . | nindent 6 }}
+
+  minAvailable: {{ .Values.podDisruptionBudget.minAvailable | default 1 }}

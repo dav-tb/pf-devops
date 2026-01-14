@@ -33,7 +33,7 @@ Create chart name and version as used by the chart label.
 {{/*
 Common labels
 */}}
-{{- define "daywriter.label" -}}
+{{- define "daywriter.labels" -}}
 helm.sh/chart: {{ include "daywriter.chart" . }}
 {{- if .Chart.AppVersion }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
