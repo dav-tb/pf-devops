@@ -1,0 +1,30 @@
+name: Setup k3d Cluster
+description: |
+  Creates an ephemeral k3d cluster for testing.
+  Configures nodes with environment label for node affinity compatibility.
+
+inputs:
+  cluster-name:
+    description: 'Name for the k3d cluster'
+    required: true
+  environment:
+    description: 'Environment label to apply to nodes (e.g., development, production)'
+    required: false
+    default: 'development'
+
+runs:
+  using: composite
+  steps:
+    - name: Create k3d cluster
+      uses: AbsaOSS/k3d-action@v2
+      with:
+        cluster-name: ${{ inputs.cluster-name }}
+        args: >-
+          --agents 1
+          --no-lb
+          --k3s-arg "--no-deploy=traefik,servicelb,metrics-server@server:*"
+
+    - name: Label nodes with environment
+      shell: bash
+      run: |
+        kubectl label nodes --all env=${{ inputs.environment }} --overwrite

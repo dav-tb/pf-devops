@@ -31,6 +31,7 @@ manifests:
           postgresql.volumeMountPath: "/bitnami/postgresql"
 deploy:
   helm: {}
+  statusCheckDeadlineSeconds: 120
 
 profiles:
 

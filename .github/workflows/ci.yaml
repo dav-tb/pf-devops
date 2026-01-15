@@ -53,15 +53,12 @@ jobs:
         id: check-kubeconfig
         run: echo "exists=${{ secrets.KUBE_CONFIG != '' }}" >> $GITHUB_OUTPUT
 
-      - name: Create k3d cluster
+      - name: Setup k3d cluster
         if: steps.check-kubeconfig.outputs.exists != 'true'
-        uses: AbsaOSS/k3d-action@v2
+        uses: ./.github/actions/setup-k3d
         with:
           cluster-name: ci-test
-          args: >-
-            --agents 1
-            --no-lb
-            --k3s-arg "--no-deploy=traefik,servicelb,metrics-server@server:*"
+          environment: development
 
       - name: Configure kubectl
         if: steps.check-kubeconfig.outputs.exists == 'true'
