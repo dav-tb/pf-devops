@@ -49,9 +49,13 @@ jobs:
         run: dotnet test --configuration Release --no-build --verbosity normal
         continue-on-error: true  # No tests in project currently
 
+      - name: Configure kubectl
+        uses: azure/k8s-set-context@v4
+        with:
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+
       - name: Skaffold run
         uses: ./.github/actions/skaffold-run
         with:
           profile: development
-          kubeconfig: ${{ secrets.KUBE_CONFIG }}
           version: ${{ steps.gitversion.outputs.semver }}

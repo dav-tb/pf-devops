@@ -3,12 +3,11 @@ description: |
   Deploys the application using Skaffold with a specified profile.
   Updates Chart.yaml appVersion and runs Skaffold deployment.
 
+  Requires kubectl to be configured before invoking this action.
+
 inputs:
   profile:
     description: 'Skaffold profile to use (e.g., development, production)'
-    required: true
-  kubeconfig:
-    description: 'Kubernetes configuration for cluster access'
     required: true
   version:
     description: 'Version to set as Chart.yaml appVersion'
@@ -17,11 +16,6 @@ inputs:
 runs:
   using: composite
   steps:
-    - name: Configure kubectl
-      uses: azure/k8s-set-context@v4
-      with:
-        kubeconfig: ${{ inputs.kubeconfig }}
-
     - name: Install Skaffold
       shell: bash
       run: |

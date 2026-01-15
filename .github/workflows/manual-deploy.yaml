@@ -10,10 +10,15 @@ on:
         options:
           - development
           - production
+      test:
+        description: 'Deploy to ephemeral k3d cluster instead of real environment'
+        required: false
+        type: boolean
+        default: true
 
 jobs:
   deploy:
-    name: Deploy to ${{ inputs.environment }}
+    name: Deploy to ${{ inputs.test && 'k3d (test)' || inputs.environment }}
     runs-on: ubuntu-24.04
 
     steps:
@@ -47,9 +52,24 @@ jobs:
       - name: Test
         run: dotnet test --configuration Release --no-build --verbosity normal
 
+      - name: Create k3d cluster
+        if: inputs.test
+        uses: AbsaOSS/k3d-action@v2
+        with:
+          cluster-name: manual-deploy-test
+          args: >-
+            --agents 1
+            --no-lb
+            --k3s-arg "--no-deploy=traefik,servicelb,metrics-server@server:*"
+
+      - name: Configure kubectl
+        if: ${{ !inputs.test }}
+        uses: azure/k8s-set-context@v4
+        with:
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+
       - name: Skaffold run
         uses: ./.github/actions/skaffold-run
         with:
           profile: ${{ inputs.environment }}
-          kubeconfig: ${{ secrets.KUBE_CONFIG }}
           version: ${{ steps.gitversion.outputs.semver }}
