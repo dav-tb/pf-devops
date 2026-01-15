@@ -1,0 +1,55 @@
+name: Manual Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - development
+          - production
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history required for GitVersion
+
+      - name: Setup .NET
+        uses: ./.github/actions/setup-dotnet
+
+      - name: Restore .NET tools
+        run: dotnet tool restore
+
+      - name: Calculate version
+        id: gitversion
+        uses: ./.github/actions/calculate-version
+
+      - name: Restore dependencies
+        run: dotnet restore --locked-mode
+
+      - name: Build
+        uses: ./.github/actions/dotnet-build
+        with:
+          noRestore: true
+          semver: ${{ steps.gitversion.outputs.semver }}
+          assemblyVersion: ${{ steps.gitversion.outputs.assemblyVersion }}
+          fileVersion: ${{ steps.gitversion.outputs.fileVersion }}
+          informationalVersion: ${{ steps.gitversion.outputs.informationalVersion }}
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build --verbosity normal
+
+      - name: Skaffold run
+        uses: ./.github/actions/skaffold-run
+        with:
+          profile: ${{ inputs.environment }}
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+          version: ${{ steps.gitversion.outputs.semver }}
