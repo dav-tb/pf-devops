@@ -10,10 +10,6 @@ build:
         dockerfile: ./src/DayWriter/Dockerfile
         buildArgs:
           SOURCE_DIR: "dist"
-      hooks:
-        before:
-          - command: ["dotnet", "publish", "-c", "Release", "-o", "../../dist", "--no-build"]
-            dir: ./src/DayWriter
 manifests:
   helm:
     releases:
