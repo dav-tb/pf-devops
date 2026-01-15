@@ -97,9 +97,6 @@ podDisruptionBudget:
 
 postgresql:
   database: "daywriter"
-  username: "postgres"
-  passwordSecretKeyRefName: ""
-  passwordSecretKeyRefKey: "password"
   port: 5432
   imageRepository: bitnamisecure/postgresql
   imageTag: "latest"
@@ -107,6 +104,15 @@ postgresql:
   volumeClaimAccessModes:
     - ReadWriteOnce
   volumeClaimStorageResourceRequest: 1Gi
-  replUsername: "postgres"
+  # Application user - created dynamically with full privileges on the database
+  appUsername: "dw_owner"
+  appPasswordSecretKeyRefName: ""
+  appPasswordSecretKeyRefKey: "password"
+  # Admin user - used for POSTGRESQL_USERNAME/PASSWORD, creates the app user
+  adminUsername: "postgres"
+  adminPasswordSecretKeyRefName: ""
+  adminPasswordSecretKeyRefKey: "admin-password"
+  # Replication user
+  replUsername: "repl_user"
   replPasswordSecretKeyRefName: ""
-  replPasswordSecretKeyRefKey: "password"
+  replPasswordSecretKeyRefKey: "replication-password"

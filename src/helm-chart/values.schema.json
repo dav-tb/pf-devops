@@ -202,23 +202,11 @@
     },
     "postgresql": {
       "type": "object",
-      "required": ["database", "username", "passwordSecretKeyRefName", "passwordSecretKeyRefKey", "port", "imageRepository", "imageTag", "volumeMountPath", "volumeClaimAccessModes", "volumeClaimStorageResourceRequest", "replUsername", "replPasswordSecretKeyRefName", "replPasswordSecretKeyRefKey"],
+      "required": ["database", "port", "imageRepository", "imageTag", "volumeMountPath", "volumeClaimAccessModes", "volumeClaimStorageResourceRequest", "appUsername", "appPasswordSecretKeyRefKey", "adminUsername", "adminPasswordSecretKeyRefKey", "replUsername", "replPasswordSecretKeyRefKey"],
       "properties": {
         "database": {
           "type": "string",
           "description": "PostgreSQL database name."
-        },
-        "username": {
-          "type": "string",
-          "description": "PostgreSQL username."
-        },
-        "passwordSecretKeyRefName": {
-          "type": "string",
-          "description": "Name of the Kubernetes secret containing the PostgreSQL password."
-        },
-        "passwordSecretKeyRefKey": {
-          "type": "string",
-          "description": "Key within the secret that contains the PostgreSQL password."
         },
         "port": {
           "type": "integer",
@@ -249,17 +237,41 @@
           "type": "string",
           "description": "Storage size request for the PostgreSQL PersistentVolumeClaim (e.g., '1Gi', '10Gi')."
         },
+        "appUsername": {
+          "type": "string",
+          "description": "Application user - created dynamically with full privileges on the database."
+        },
+        "appPasswordSecretKeyRefName": {
+          "type": "string",
+          "description": "Name of the Kubernetes secret containing the application user password. If empty, a random password is generated."
+        },
+        "appPasswordSecretKeyRefKey": {
+          "type": "string",
+          "description": "Key within the secret that contains the application user password."
+        },
+        "adminUsername": {
+          "type": "string",
+          "description": "Admin user - used for POSTGRESQL_USERNAME/PASSWORD, creates the app user."
+        },
+        "adminPasswordSecretKeyRefName": {
+          "type": "string",
+          "description": "Name of the Kubernetes secret containing the admin password. If empty, a random password is generated."
+        },
+        "adminPasswordSecretKeyRefKey": {
+          "type": "string",
+          "description": "Key within the secret that contains the admin password."
+        },
         "replUsername": {
           "type": "string",
           "description": "PostgreSQL replication username."
         },
         "replPasswordSecretKeyRefName": {
           "type": "string",
-          "description": "Name of the Kubernetes secret containing the PostgreSQL replication password."
+          "description": "Name of the Kubernetes secret containing the replication password. If empty, a random password is generated."
         },
         "replPasswordSecretKeyRefKey": {
           "type": "string",
-          "description": "Key within the secret that contains the PostgreSQL replication password."
+          "description": "Key within the secret that contains the replication password."
         }
       }
     }

@@ -51,24 +51,46 @@ spec:
           env:
             - name: POSTGRESQL_DATABASE
               value: {{ .Values.postgresql.database | quote }}
+            # App user - created by Bitnami with POSTGRESQL_USERNAME/PASSWORD
+            - name: POSTGRESQL_USERNAME
+              value: {{ .Values.postgresql.appUsername | quote }}
             - name: POSTGRESQL_PASSWORD
+              {{- if .Values.postgresql.appPasswordSecretKeyRefName }}
               valueFrom:
                 secretKeyRef:
-                  key: {{ .Values.postgresql.passwordSecretKeyRefKey }}
-                  name: {{ .Values.postgresql.passwordSecretKeyRefName }}
-            - name: POSTGRESQL_USERNAME
-              value: {{ .Values.postgresql.username | quote }}
+                  name: {{ .Values.postgresql.appPasswordSecretKeyRefName }}
+                  key: {{ .Values.postgresql.appPasswordSecretKeyRefKey }}
+                  optional: false
+              {{- else }}
+              value: {{ randAlphaNum 32 | quote }}
+              {{- end }}
+            # Admin (postgres superuser) password
+            - name: POSTGRESQL_POSTGRES_PASSWORD
+              {{- if .Values.postgresql.adminPasswordSecretKeyRefName }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.postgresql.adminPasswordSecretKeyRefName }}
+                  key: {{ .Values.postgresql.adminPasswordSecretKeyRefKey }}
+                  optional: false
+              {{- else }}
+              value: {{ randAlphaNum 32 | quote }}
+              {{- end }}
             - name: POSTGRESQL_VOLUME_DIR
               value: {{ .Values.postgresql.volumeMountPath | quote }}
             - name: POSTGRESQL_PORT
               value: {{ .Values.postgresql.port | quote }}
             - name: POSTGRESQL_REPLICATION_USER
-              value: {{ .Values.postgresql.replUsername | quote }}
+              value: {{ .Values.postgresql.replUsername | default .Values.postgresql.appUsername | quote }}
             - name: POSTGRESQL_REPLICATION_PASSWORD
+              {{- if .Values.postgresql.replPasswordSecretKeyRefName }}
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.postgresql.replPasswordSecretKeyRefName }}
                   key: {{ .Values.postgresql.replPasswordSecretKeyRefKey }}
+                  optional: false
+              {{- else }}
+              value: {{ randAlphaNum 32 | quote }}
+              {{- end }}
 
           image: "{{ .Values.postgresql.imageRepository }}:{{ .Values.postgresql.imageTag }}"
           imagePullPolicy: IfNotPresent

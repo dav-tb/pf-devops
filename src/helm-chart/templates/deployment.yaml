@@ -52,29 +52,34 @@ spec:
             - name: ENV
               value: {{ .Values.env | quote }}
             - name: POSTGRES_PASSWORD
+              {{- if .Values.postgresql.appPasswordSecretKeyRefName }}
               valueFrom:
                 secretKeyRef:
-                  key: {{ .Values.postgresql.passwordSecretKeyRefKey }}
-                  name: {{ .Values.postgresql.passwordSecretKeyRefName }}
+                  name: {{ .Values.postgresql.appPasswordSecretKeyRefName }}
+                  key: {{ .Values.postgresql.appPasswordSecretKeyRefKey }}
+                  optional: false
+              {{- else }}
+              value: {{ randAlphaNum 32 | quote }}
+              {{- end }}
             - name: POSTGRES_CONNECTION_STRING
-              value: "Host={{ .Release.Name }}-postgresql;Database={{ .Values.postgresql.database }};Port={{ .Values.postgresql.port }};Username={{ .Values.postgresql.username }};Password=$(POSTGRES_PASSWORD)"
+              value: "Host={{ .Release.Name }}-postgresql;Database={{ .Values.postgresql.database }};Port={{ .Values.postgresql.port }};Username={{ .Values.postgresql.appUsername }};Password=$(POSTGRES_PASSWORD)"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           livenessProbe:
             exec:
               command:
                 - /bin/sh
                 - -c
-                - "ps aux | grep DayWriter | grep -v grep"
-            initialDelaySeconds: {{ .Values.livenessProbe.initialDelay | default 15 }}
-            periodSeconds: {{ .Values.livenessProbe.period | default 20 }}
+                - "test -d /proc/1"
+            initialDelaySeconds: {{ .Values.livenessProbe.initialDelay | default 0 }}
+            periodSeconds: {{ .Values.livenessProbe.period | default 3 }}
           readinessProbe:
             exec:
               command:
                 - /bin/sh
                 - -c
-                - "ps aux | grep DayWriter | grep -v grep"
-            initialDelaySeconds: {{ .Values.readinessProbe.initialDelay | default 5 }}
-            periodSeconds: {{ .Values.readinessProbe.period | default 10 }}
+                - "test -d /proc/1"
+            initialDelaySeconds: {{ .Values.readinessProbe.initialDelay | default 0 }}
+            periodSeconds: {{ .Values.readinessProbe.period | default 3 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
           securityContext:
