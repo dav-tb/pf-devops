@@ -1,4 +1,4 @@
-name: CI - Build and Test
+name: CI - Build, Test and Deploy
 
 on:
   push:
@@ -12,17 +12,10 @@ on:
       - '!.github/actions/**'
       - '.claude/**'
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/daywriter
-
 jobs:
   build:
-    name: Build, Test and Publish
+    name: Build, Test and Deploy
     runs-on: ubuntu-24.04
-    permissions:
-      contents: read
-      packages: write
 
     steps:
       - name: Checkout repository
@@ -56,47 +49,9 @@ jobs:
         run: dotnet test --configuration Release --no-build --verbosity normal
         continue-on-error: true  # No tests in project currently
 
-      - name: Publish
-        run: |
-          dotnet publish --configuration Release --output ./dist --no-build \
-            -p:Version=${{ steps.gitversion.outputs.semver }} \
-            -p:AssemblyVersion=${{ steps.gitversion.outputs.assemblyVersion }} \
-            -p:FileVersion=${{ steps.gitversion.outputs.fileVersion }} \
-            -p:InformationalVersion=${{ steps.gitversion.outputs.informationalVersion }}
-
-      # Docker build and push - last step
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Container Registry
-        if: github.event_name != 'pull_request'
-        uses: docker/login-action@v3
+      - name: Skaffold run
+        uses: ./.github/actions/skaffold-run
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.repository_owner }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=semver,pattern={{version}},value=${{ steps.gitversion.outputs.semver }}
-            type=ref,event=branch
-            type=ref,event=pr
-            type=sha,prefix=
-            type=raw,value=latest,enable={{is_default_branch}}
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          file: ./src/DayWriter/Dockerfile
-          push: ${{ github.event_name != 'pull_request' }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          build-args: |
-            SOURCE_DIR=dist
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
+          profile: development
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+          version: ${{ steps.gitversion.outputs.semver }}
