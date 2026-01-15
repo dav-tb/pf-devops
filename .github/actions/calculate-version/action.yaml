@@ -22,7 +22,7 @@ runs:
       id: gitversion
       shell: bash
       run: |
-        VERSION_JSON=$(dotnet-gitversion /output json /nofetch)
+        VERSION_JSON=$(dotnet gitversion /output json /nofetch)
         echo "semver=$(echo "$VERSION_JSON" | jq -r '.SemVer')" >> $GITHUB_OUTPUT
         echo "assemblyVersion=$(echo "$VERSION_JSON" | jq -r '.AssemblySemVer')" >> $GITHUB_OUTPUT
         echo "fileVersion=$(echo "$VERSION_JSON" | jq -r '.AssemblySemFileVer')" >> $GITHUB_OUTPUT
