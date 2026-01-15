@@ -49,7 +49,18 @@ jobs:
         run: dotnet test --configuration Release --no-build --verbosity normal
         continue-on-error: true  # No tests in project currently
 
+      - name: Create k3d cluster
+        if: ${{ !secrets.KUBE_CONFIG }}
+        uses: AbsaOSS/k3d-action@v2
+        with:
+          cluster-name: ci-test
+          args: >-
+            --agents 1
+            --no-lb
+            --k3s-arg "--no-deploy=traefik,servicelb,metrics-server@server:*"
+
       - name: Configure kubectl
+        if: ${{ secrets.KUBE_CONFIG }}
         uses: azure/k8s-set-context@v4
         with:
           kubeconfig: ${{ secrets.KUBE_CONFIG }}
