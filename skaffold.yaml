@@ -12,63 +12,60 @@ build:
           SOURCE_DIR: "dist"
       hooks:
         before:
-          - command: ["dotnet", "publish", "-c", "Release", "-o", "../../dist"]
+          - command: ["dotnet", "publish", "-c", "Release", "-o", "../../dist", "--no-build"]
             dir: ./src/DayWriter
 manifests:
   helm:
     releases:
       - name: daywriter
         chartPath: ./src/helm-chart
+        createNamespace: true
         setValueTemplates:
           image.repository: "{{.IMAGE_REPO}}"
           image.tag: "{{.IMAGE_TAG}}"
+        setValues:
+          postgresql.database: "daywriter"
+          postgresql.appUsername: "dw_owner"
+          postgresql.appPasswordSecretKeyRefName: "db-password"
+          postgresql.appPasswordSecretKeyRefKey: "password"
+          postgresql.volumeMountPath: "/bitnami/postgresql"
 deploy:
   helm: {}
 
 profiles:
 
   - name: development
-    manifests:
-      helm:
-        releases:
-          - name: daywriter
-            chartPath: ./src/helm-chart
-            namespace: development
-            setValueTemplates:
-              image.repository: "{{.IMAGE_REPO}}"
-              image.tag: "{{.IMAGE_TAG}}"
-            setValues:
-              env: "development"
-              replicaCount: 1
-              postgresql.database: "dw_dev"
-              postgresql.username: "daywriter_dev"
-              postgresql.passwordSecretKeyRefName: "dev-db-password"
-              postgresql.passwordSecretKeyRefKey: "password"
-              postgresql.replPasswordSecretKeyRefName: "dev-db-password"
-              postgresql.replPasswordSecretKeyRefKey: "replication-password"
-              postgresql.volumeMountPath: "/bitnami/postgresql"
-              postgresql.volumeClaimStorageResourceRequest: "1Gi"
-              podDisruptionBudget.minAvailable: 1
+    patches:
+      - op: add
+        path: /manifests/helm/releases/0/namespace
+        value: development
+      - op: add
+        path: /manifests/helm/releases/0/setValues/env
+        value: "development"
+      - op: add
+        path: /manifests/helm/releases/0/setValues/replicaCount
+        value: 1
+      - op: add
+        path: /manifests/helm/releases/0/setValues/postgresql.volumeClaimStorageResourceRequest
+        value: "1Gi"
+      - op: add
+        path: /manifests/helm/releases/0/setValues/podDisruptionBudget.minAvailable
+        value: 1
 
   - name: production
-    manifests:
-      helm:
-        releases:
-          - name: daywriter
-            chartPath: ./src/helm-chart
-            namespace: production
-            setValueTemplates:
-              image.repository: "{{.IMAGE_REPO}}"
-              image.tag: "{{.IMAGE_TAG}}"
-            setValues:
-              env: "production"
-              replicaCount: 3
-              postgresql.database: "dw_prod"
-              postgresql.username: "daywriter_prod"
-              postgresql.passwordSecretKeyRefName: "prod-db-password"
-              postgresql.passwordSecretKeyRefKey: "password"
-              postgresql.replPasswordSecretKeyRefName: "prod-db-password"
-              postgresql.replPasswordSecretKeyRefKey: "replication-password"
-              postgresql.volumeMountPath: "/bitnami/postgresql"
-              postgresql.volumeClaimStorageResourceRequest: "10Gi"
-              podDisruptionBudget.minAvailable: 2
+    patches:
+      - op: add
+        path: /manifests/helm/releases/0/namespace
+        value: production
+      - op: add
+        path: /manifests/helm/releases/0/setValues/env
+        value: "production"
+      - op: add
+        path: /manifests/helm/releases/0/setValues/replicaCount
+        value: 3
+      - op: add
+        path: /manifests/helm/releases/0/setValues/postgresql.volumeClaimStorageResourceRequest
+        value: "10Gi"
+      - op: add
+        path: /manifests/helm/releases/0/setValues/podDisruptionBudget.minAvailable
+        value: 2
