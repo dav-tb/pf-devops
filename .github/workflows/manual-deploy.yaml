@@ -52,6 +52,9 @@ jobs:
       - name: Test
         run: dotnet test --configuration Release --no-build --verbosity normal
 
+      - name: Publish
+        run: dotnet publish src/DayWriter --configuration Release --output ./dist --no-build
+
       - name: Create k3d cluster
         if: inputs.test
         uses: AbsaOSS/k3d-action@v2
