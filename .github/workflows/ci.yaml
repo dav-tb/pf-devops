@@ -1,0 +1,76 @@
+name: CI - Build, Test and Deploy
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - 'README.md'
+      - 'AGENTS.md'
+      - 'CLAUDE.md'
+      - '.github/**'
+      - '!.github/workflows/ci.yaml'
+      - '!.github/actions/**'
+      - '.claude/**'
+
+jobs:
+  build:
+    name: Build, Test and Deploy
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history required for GitVersion
+
+      - name: Setup .NET
+        uses: ./.github/actions/setup-dotnet
+
+      - name: Restore .NET tools
+        run: dotnet tool restore
+
+      - name: Calculate version
+        id: gitversion
+        uses: ./.github/actions/calculate-version
+
+      - name: Restore dependencies
+        run: dotnet restore --locked-mode
+
+      - name: Build
+        uses: ./.github/actions/dotnet-build
+        with:
+          noRestore: true
+          semver: ${{ steps.gitversion.outputs.semver }}
+          assemblyVersion: ${{ steps.gitversion.outputs.assemblyVersion }}
+          fileVersion: ${{ steps.gitversion.outputs.fileVersion }}
+          informationalVersion: ${{ steps.gitversion.outputs.informationalVersion }}
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build --verbosity normal
+        continue-on-error: true  # No tests in project currently
+
+      - name: Publish
+        run: dotnet publish src/DayWriter --configuration Release --output ./dist --no-build
+
+      - name: Check for KUBE_CONFIG secret
+        id: check-kubeconfig
+        run: echo "exists=${{ secrets.KUBE_CONFIG != '' }}" >> $GITHUB_OUTPUT
+
+      - name: Setup k3d cluster
+        if: steps.check-kubeconfig.outputs.exists != 'true'
+        uses: ./.github/actions/setup-k3d
+        with:
+          cluster-name: ci-test
+          environment: development
+
+      - name: Configure kubectl
+        if: steps.check-kubeconfig.outputs.exists == 'true'
+        uses: azure/k8s-set-context@v4
+        with:
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+
+      - name: Skaffold run
+        uses: ./.github/actions/skaffold-run
+        with:
+          profile: development
+          version: ${{ steps.gitversion.outputs.semver }}

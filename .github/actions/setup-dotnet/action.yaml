@@ -1,0 +1,14 @@
+name: Setup .NET
+description: |
+  Configures the .NET SDK using global.json as the source of truth.
+  The setup-dotnet action automatically detects global.json and installs
+  the specified SDK version, ensuring consistency between developer
+  machines and CI/CD pipelines.
+
+runs:
+  using: composite
+  steps:
+    - name: Setup .NET SDK
+      uses: actions/setup-dotnet@v4
+      # SDK version is determined by global.json at repository root.
+      # This ensures the same SDK is used locally and in CI/CD.

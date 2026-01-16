@@ -1,0 +1,72 @@
+name: Manual Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment'
+        required: true
+        type: choice
+        options:
+          - development
+          - production
+      test:
+        description: 'Deploy to ephemeral k3d cluster instead of real environment'
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.test && 'k3d (test)' || inputs.environment }}
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history required for GitVersion
+
+      - name: Setup .NET
+        uses: ./.github/actions/setup-dotnet
+
+      - name: Restore .NET tools
+        run: dotnet tool restore
+
+      - name: Calculate version
+        id: gitversion
+        uses: ./.github/actions/calculate-version
+
+      - name: Restore dependencies
+        run: dotnet restore --locked-mode
+
+      - name: Build
+        uses: ./.github/actions/dotnet-build
+        with:
+          noRestore: true
+          semver: ${{ steps.gitversion.outputs.semver }}
+          assemblyVersion: ${{ steps.gitversion.outputs.assemblyVersion }}
+          fileVersion: ${{ steps.gitversion.outputs.fileVersion }}
+          informationalVersion: ${{ steps.gitversion.outputs.informationalVersion }}
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build --verbosity normal
+
+      - name: Setup k3d cluster
+        if: inputs.test
+        uses: ./.github/actions/setup-k3d
+        with:
+          cluster-name: manual-deploy-test
+          environment: ${{ inputs.environment }}
+
+      - name: Configure kubectl
+        if: ${{ !inputs.test }}
+        uses: azure/k8s-set-context@v4
+        with:
+          kubeconfig: ${{ secrets.KUBE_CONFIG }}
+
+      - name: Skaffold run
+        uses: ./.github/actions/skaffold-run
+        with:
+          profile: ${{ inputs.environment }}
+          version: ${{ steps.gitversion.outputs.semver }}

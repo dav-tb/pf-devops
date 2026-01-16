@@ -1,0 +1,46 @@
+name: Setup k3d Cluster
+description: |
+  Creates an ephemeral k3d cluster for testing.
+  Configures nodes with environment label for node affinity compatibility.
+
+inputs:
+  cluster-name:
+    description: 'Name for the k3d cluster'
+    required: true
+  environment:
+    description: 'Environment label to apply to nodes (e.g., development, production)'
+    required: false
+    default: 'development'
+
+runs:
+  using: composite
+  steps:
+    - name: Create k3d cluster
+      uses: AbsaOSS/k3d-action@v2
+      with:
+        cluster-name: ${{ inputs.cluster-name }}
+        args: >-
+          --agents 1
+          --no-lb
+          --k3s-arg "--no-deploy=traefik,servicelb,metrics-server@server:*"
+
+    - name: Label nodes with environment
+      shell: bash
+      run: |
+        kubectl label nodes --all env=${{ inputs.environment }} --overwrite
+
+    - name: Wait for local-path-provisioner
+      shell: bash
+      run: |
+        echo "Waiting for local-path-provisioner to be ready..."
+        # Wait for the provisioner pod (label varies by k3s version)
+        for i in {1..30}; do
+          if kubectl get pods -n kube-system | grep -q "local-path-provisioner.*Running"; then
+            echo "local-path-provisioner is running"
+            break
+          fi
+          echo "Waiting for local-path-provisioner... ($i/30)"
+          sleep 2
+        done
+        kubectl get pods -n kube-system
+        kubectl get storageclass

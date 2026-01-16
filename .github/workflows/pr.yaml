@@ -1,0 +1,73 @@
+name: PR - Build and Test
+
+on:
+  pull_request:
+    branches: [main]
+    paths-ignore:
+      - 'README.md'
+      - 'AGENTS.md'
+      - 'CLAUDE.md'
+      - '.github/**'
+      - '!.github/workflows/pr.yaml'
+      - '!.github/actions/**'
+      - '.claude/**'
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history required for GitVersion
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: 'v3.14.0'
+
+      - name: Lint Helm chart
+        run: helm lint ./src/helm-chart
+
+      - name: Setup .NET
+        uses: ./.github/actions/setup-dotnet
+
+      - name: Verify code formatting
+        run: dotnet format --verify-no-changes
+
+      - name: Restore .NET tools
+        run: dotnet tool restore
+
+      - name: Calculate version
+        id: gitversion
+        uses: ./.github/actions/calculate-version
+
+      - name: Restore dependencies
+        run: dotnet restore --locked-mode
+
+      - name: Build
+        uses: ./.github/actions/dotnet-build
+        with:
+          noRestore: true
+          semver: ${{ steps.gitversion.outputs.semver }}
+          assemblyVersion: ${{ steps.gitversion.outputs.assemblyVersion }}
+          fileVersion: ${{ steps.gitversion.outputs.fileVersion }}
+          informationalVersion: ${{ steps.gitversion.outputs.informationalVersion }}
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build --verbosity normal
+        continue-on-error: true  # No tests in project currently
+
+      - name: Setup k3d cluster
+        uses: ./.github/actions/setup-k3d
+        with:
+          cluster-name: pr-test
+          environment: development
+
+      - name: Skaffold run
+        uses: ./.github/actions/skaffold-run
+        with:
+          profile: development
+          version: ${{ steps.gitversion.outputs.semver }}

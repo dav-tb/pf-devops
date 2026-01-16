@@ -1,0 +1,29 @@
+name: Calculate Version
+description: Calculates semantic version using GitVersion
+
+outputs:
+  semver:
+    description: Semantic version (e.g., 1.2.3)
+    value: ${{ steps.gitversion.outputs.semver }}
+  assemblyVersion:
+    description: Assembly version (e.g., 1.2.3.0)
+    value: ${{ steps.gitversion.outputs.assemblyVersion }}
+  fileVersion:
+    description: File version (e.g., 1.2.3.0)
+    value: ${{ steps.gitversion.outputs.fileVersion }}
+  informationalVersion:
+    description: Informational version with metadata
+    value: ${{ steps.gitversion.outputs.informationalVersion }}
+
+runs:
+  using: composite
+  steps:
+    - name: Calculate version
+      id: gitversion
+      shell: bash
+      run: |
+        VERSION_JSON=$(dotnet gitversion /output json /nofetch)
+        echo "semver=$(echo "$VERSION_JSON" | jq -r '.SemVer')" >> $GITHUB_OUTPUT
+        echo "assemblyVersion=$(echo "$VERSION_JSON" | jq -r '.AssemblySemVer')" >> $GITHUB_OUTPUT
+        echo "fileVersion=$(echo "$VERSION_JSON" | jq -r '.AssemblySemFileVer')" >> $GITHUB_OUTPUT
+        echo "informationalVersion=$(echo "$VERSION_JSON" | jq -r '.InformationalVersion')" >> $GITHUB_OUTPUT

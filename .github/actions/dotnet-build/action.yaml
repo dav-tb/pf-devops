@@ -1,0 +1,55 @@
+name: .NET Build
+description: |
+  Builds the .NET solution with optional version properties.
+  If version inputs are provided, they are passed to the build command.
+
+inputs:
+  configuration:
+    description: 'Build configuration (Debug, Release)'
+    required: false
+    default: 'Release'
+  noRestore:
+    description: 'Skip restore step (use --no-restore flag)'
+    required: false
+  semver:
+    description: 'Semantic version for -p:Version'
+    required: false
+  assemblyVersion:
+    description: 'Assembly version for -p:AssemblyVersion'
+    required: false
+  fileVersion:
+    description: 'File version for -p:FileVersion'
+    required: false
+  informationalVersion:
+    description: 'Informational version for -p:InformationalVersion'
+    required: false
+
+runs:
+  using: composite
+  steps:
+    - name: Build
+      shell: bash
+      run: |
+        BUILD_ARGS="--configuration ${{ inputs.configuration }}"
+
+        if [ -n "${{ inputs.noRestore }}" ]; then
+          BUILD_ARGS="$BUILD_ARGS --no-restore"
+        fi
+
+        if [ -n "${{ inputs.semver }}" ]; then
+          BUILD_ARGS="$BUILD_ARGS -p:Version=${{ inputs.semver }}"
+        fi
+
+        if [ -n "${{ inputs.assemblyVersion }}" ]; then
+          BUILD_ARGS="$BUILD_ARGS -p:AssemblyVersion=${{ inputs.assemblyVersion }}"
+        fi
+
+        if [ -n "${{ inputs.fileVersion }}" ]; then
+          BUILD_ARGS="$BUILD_ARGS -p:FileVersion=${{ inputs.fileVersion }}"
+        fi
+
+        if [ -n "${{ inputs.informationalVersion }}" ]; then
+          BUILD_ARGS="$BUILD_ARGS -p:InformationalVersion=${{ inputs.informationalVersion }}"
+        fi
+
+        dotnet build $BUILD_ARGS

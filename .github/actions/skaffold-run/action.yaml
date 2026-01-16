@@ -1,0 +1,33 @@
+name: Skaffold Run
+description: |
+  Deploys the application using Skaffold with a specified profile.
+  Updates Chart.yaml appVersion and runs Skaffold deployment.
+
+  Requires kubectl to be configured before invoking this action.
+
+inputs:
+  profile:
+    description: 'Skaffold profile to use (e.g., development, production)'
+    required: true
+  version:
+    description: 'Version to set as Chart.yaml appVersion'
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Install Skaffold
+      shell: bash
+      run: |
+        curl -Lo skaffold https://storage.googleapis.com/skaffold/releases/latest/skaffold-linux-amd64
+        chmod +x skaffold
+        sudo mv skaffold /usr/local/bin/
+
+    - name: Update Chart.yaml appVersion
+      shell: bash
+      run: |
+        sed -i "s/^appVersion:.*/appVersion: \"${{ inputs.version }}\"/" ./src/helm-chart/Chart.yaml
+
+    - name: Skaffold run
+      shell: bash
+      run: skaffold run -p ${{ inputs.profile }}
