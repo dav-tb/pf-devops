@@ -93,3 +93,22 @@ volumeMounts: []
 
 autoscaling:
   enabled: false
+
+postgresql:
+  database: "daywriter"
+  port: 5432
+  imageRepository: bitnamilegacy/postgresql
+  imageTag: "16"
+  volumeMountPath: /bitnami/postgresql
+  volumeClaimAccessModes:
+    - ReadWriteOnce
+  volumeClaimStorageResourceRequest: 1Gi
+  appUsername: "dw_owner"
+  appPasswordSecretKeyRefName: ""
+  appPasswordSecretKeyRefKey: "password"
+  adminUsername: "postgres"
+  adminPasswordSecretKeyRefName: ""
+  adminPasswordSecretKeyRefKey: "admin-password"
+  replUsername: "repl_user"
+  replPasswordSecretKeyRefName: ""
+  replPasswordSecretKeyRefKey: "replication-password"
