@@ -98,6 +98,26 @@ spec:
             - name: postgresql
               containerPort: {{ .Values.postgresql.port }}
               protocol: TCP
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U postgres -h 127.0.0.1 -p {{ .Values.postgresql.port }}
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - pg_isready -U postgres -h 127.0.0.1 -p {{ .Values.postgresql.port }}
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
           volumeMounts:
             - name: data
               mountPath: {{ .Values.postgresql.volumeMountPath }}

@@ -98,8 +98,8 @@ podDisruptionBudget:
 postgresql:
   database: "daywriter"
   port: 5432
-  imageRepository: bitnamisecure/postgresql
-  imageTag: "latest"
+  imageRepository: bitnamilegacy/postgresql
+  imageTag: "16"
   volumeMountPath: /bitnami/postgresql
   volumeClaimAccessModes:
     - ReadWriteOnce
