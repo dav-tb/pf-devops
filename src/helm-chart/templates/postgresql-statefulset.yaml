@@ -33,21 +33,6 @@ spec:
                 topologyKey: "kubernetes.io/hostname"
       containers:
         - name: postgresql
-          command:
-            - /bin/bash
-            - -ec
-            - |
-              ORDINAL=${HOSTNAME##*-}
-              if [ "$ORDINAL" -eq "0" ]; then
-                export REPLICATION_MODE="master"
-              else
-                export REPLICATION_MODE="slave"
-                export POSTGRESQL_MASTER_HOST="{{ .Release.Name }}-postgresql-0.{{ .Release.Name }}-postgresql.{{ .Release.Namespace }}.svc.cluster.local"
-                export POSTGRESQL_MASTER_PORT_NUMBER="{{ .Values.postgresql.port }}"
-              fi
-
-              /opt/bitnami/scripts/postgresql/entrypoint.sh /opt/bitnami/scripts/postgresql/run.sh
-
           env:
             - name: POSTGRESQL_DATABASE
               value: {{ .Values.postgresql.database | quote }}
