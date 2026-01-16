@@ -1,5 +1,7 @@
-
-version: '3.8'
+x-postgres-credentials: &postgres-credentials
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: postgres
+  POSTGRES_DB: datesaver
 
 services:
   postgres:
@@ -7,22 +9,27 @@ services:
     container_name: postgres_dapper_demo
     restart: always
     environment:
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: datesaver
+      <<: *postgres-credentials
     ports:
       - "15432:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
+
   demo:
     image: daywriter:latest
     restart: always
     ports:
       - "8080:80"
     build:
-      context: .
+      context: DayWriter
       dockerfile: Dockerfile
+      args:
+        SOURCE_DIR: ${SOURCE_DIR}
+    environment:
+      <<: *postgres-credentials
+      POSTGRES_CONNECTION_STRING: "Host=postgres;Port=5432;Database=datesaver;Username=postgres;Password=postgres"
     depends_on:
       - postgres
+
 volumes:
   pgdata:

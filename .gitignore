@@ -1,0 +1,6 @@
+# Publish output directory
+dist/**
+
+# .NET build outputs
+src/**/bin/
+src/**/obj/
