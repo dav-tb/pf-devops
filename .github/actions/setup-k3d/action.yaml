@@ -28,3 +28,10 @@ runs:
       shell: bash
       run: |
         kubectl label nodes --all env=${{ inputs.environment }} --overwrite
+
+    - name: Wait for local-path-provisioner
+      shell: bash
+      run: |
+        echo "Waiting for local-path-provisioner to be ready..."
+        kubectl wait --for=condition=ready pod -l app=local-path-provisioner -n kube-system --timeout=60s
+        kubectl get storageclass
