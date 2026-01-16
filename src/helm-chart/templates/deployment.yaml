@@ -91,15 +91,21 @@ spec:
       initContainers:
         - name: wait-for-db
           image: busybox:latest
-
           command:
             - sh
             - -c
             - |
-              until nc -z {{ .Release.Name }}-postgresql {{ .Values.postgresql.port }}; do
+              echo "Waiting for PostgreSQL DNS resolution..."
+              until nslookup {{ .Release.Name }}-postgresql.{{ .Release.Namespace }}.svc.cluster.local; do
+                echo "DNS not ready, retrying..."
+                sleep 2
+              done
+              echo "DNS resolved, waiting for PostgreSQL port..."
+              until nc -z {{ .Release.Name }}-postgresql.{{ .Release.Namespace }}.svc.cluster.local {{ .Values.postgresql.port }}; do
                 echo "Waiting for postgresql..."
                 sleep 2
               done
+              echo "PostgreSQL is ready!"
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       serviceAccountName: {{ include "daywriter.serviceAccountName" . }}
