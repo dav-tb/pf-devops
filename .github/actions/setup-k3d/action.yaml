@@ -33,5 +33,14 @@ runs:
       shell: bash
       run: |
         echo "Waiting for local-path-provisioner to be ready..."
-        kubectl wait --for=condition=ready pod -l app=local-path-provisioner -n kube-system --timeout=60s
+        # Wait for the provisioner pod (label varies by k3s version)
+        for i in {1..30}; do
+          if kubectl get pods -n kube-system | grep -q "local-path-provisioner.*Running"; then
+            echo "local-path-provisioner is running"
+            break
+          fi
+          echo "Waiting for local-path-provisioner... ($i/30)"
+          sleep 2
+        done
+        kubectl get pods -n kube-system
         kubectl get storageclass
