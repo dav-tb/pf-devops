@@ -22,8 +22,6 @@ manifests:
         setValues:
           postgresql.database: "daywriter"
           postgresql.appUsername: "dw_owner"
-          postgresql.appPasswordSecretKeyRefName: "db-password"
-          postgresql.appPasswordSecretKeyRefKey: "password"
           postgresql.volumeMountPath: "/bitnami/postgresql"
 deploy:
   helm: {}
